@@ -478,10 +478,10 @@ function drawGuide(){
     bgCtx.fillStyle='#E2E6FF';
     bgCtx.textAlign='center';
     bgCtx.textBaseline='middle';
-    bgCtx.font = "900 300px 'Nunito', Arial, sans-serif";
-    bgCtx.fillText(letraActual.toLowerCase(), CANVAS_SIZE / 2, CANVAS_SIZE / 2 + 10);
+    bgCtx.font="400 300px 'Playwrite CL', cursive";
+    bgCtx.fillText(letraActual.toLowerCase(),CANVAS_SIZE/2,CANVAS_SIZE/2+10);
   };
-  if(document.fonts?.load) document.fonts.load("300px 'Nunito'").then(paint).catch(paint);
+  if(document.fonts?.load) document.fonts.load("300px 'Playwrite CL'").then(paint).catch(paint);
   else paint();
 }
 function resetDraw(){clearDraw();drawGuide();}
@@ -977,14 +977,18 @@ window.decirPalabra=async function(){
 
   palabraEscuchando=true;
   btn.disabled=true;
-  btn.textContent='🎙️ Escuchando...';
   setMicStatus('Escuchando tu voz...','ok');
 
   let finished=false;
   let timer=null;
+  let countdown=null;
+  let segundos=2;
+
+  btn.textContent=`🎙️ Escuchando... ${segundos}s`;
 
   const cleanup=()=>{
     if(timer)clearTimeout(timer);
+    if(countdown)clearInterval(countdown);
     palabraEscuchando=false;
     btn.disabled=false;
     btn.textContent='🎤 Decir la palabra';
@@ -1003,10 +1007,28 @@ window.decirPalabra=async function(){
 
   recog.onstart=()=>{
     setMicStatus('Escuchando tu voz...','ok');
+
+    segundos=2;
+    btn.textContent=`🎙️ Escuchando... ${segundos}s`;
+
+    countdown=setInterval(()=>{
+      segundos--;
+      if(segundos>0){
+        btn.textContent=`🎙️ Escuchando... ${segundos}s`;
+      }else{
+        clearInterval(countdown);
+        countdown=null;
+        btn.textContent='⏳ Procesando...';
+      }
+    },1000);
+
+    timer=setTimeout(()=>{
+      try{recog?.stop();}catch{}
+    },2000);
   };
 
   recog.onspeechstart=()=>{
-    btn.textContent='🗣️ Te escucho...';
+    setMicStatus('Te escucho...','ok');
   };
 
   recog.onresult=(ev)=>{
@@ -1046,10 +1068,6 @@ window.decirPalabra=async function(){
   recog.onend=()=>{
     if(!finished)finish('<p>No alcancé a reconocer la palabra. Intenta otra vez 🎤</p>');
   };
-
-  timer=setTimeout(()=>{
-    finish('<p>No escuché una palabra a tiempo. Prueba nuevamente 🎤</p>');
-  },9000);
 
   try{
     recog.start();
