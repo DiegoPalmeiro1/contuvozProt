@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ContuVoz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Playwrite+CL:wght@100..400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --green:#4FB477;
+  --green-dark:#287A52;
+  --green-soft:#EAF8EF;
+  --mint:#DDF4E6;
+  --cream:#FFFDF7;
+  --yellow:#FFD76A;
+  --purple:#7868E6;
+  --red:#EF6B6B;
+  --ink:#263238;
+  --muted:#66757F;
+  --white:#FFFFFF;
+  --shadow:0 10px 28px rgba(31,84,55,.14);
+  --shadow-soft:0 6px 18px rgba(31,84,55,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Nunito',system-ui,-apple-system,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 15% 10%,rgba(255,255,255,.75) 0 7%,transparent 8%),
+    radial-gradient(circle at 85% 20%,rgba(255,255,255,.45) 0 5%,transparent 6%),
+    linear-gradient(160deg,#DDF4E6 0%,#BFE8CD 42%,#8FD1A8 100%);
+  overflow:hidden;
+}
+button{font-family:inherit}
+.view{display:none;height:100dvh;width:100%;flex-direction:column;position:relative}
+.view.active{display:flex}
+.view::before,.view::after{
+  content:"";position:absolute;border-radius:999px;background:rgba(255,255,255,.18);pointer-events:none
+}
+.view::before{width:180px;height:180px;right:-70px;top:55px}
+.view::after{width:120px;height:120px;left:-45px;bottom:40px}
+
+.back-btn{
+  position:fixed;top:14px;left:14px;z-index:70;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 15px;border:none;border-radius:999px;
+  background:rgba(255,255,255,.94);color:var(--green-dark);
+  font-weight:900;font-size:.95rem;cursor:pointer;
+  box-shadow:var(--shadow-soft);backdrop-filter:blur(8px)
+}
+.back-btn:active{transform:scale(.97)}
+
+.titulo{
+  text-align:center;color:var(--green-dark);font-size:clamp(1.25rem,5vw,1.9rem);
+  font-weight:900;padding:16px 72px 8px;z-index:2
+}
+.helper{
+  color:var(--muted);font-size:.95rem;text-align:center;line-height:1.35
+}
+
+/* HOME */
+#home{padding:22px 18px 20px;align-items:center;text-align:center}
+.brand{
+  margin-top:4px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.8);
+  box-shadow:var(--shadow);border-radius:28px;padding:14px 22px 12px;max-width:520px;width:100%;
+  position:relative;z-index:2
+}
+.brand h1{color:var(--green-dark);font-size:clamp(1.7rem,7vw,2.8rem);font-weight:900;letter-spacing:-.03em}
+.brand .sub{color:var(--muted);font-size:clamp(.95rem,3vw,1.05rem);margin-top:2px}
+.menu{
+  flex:1;width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-top:14px;min-height:0;position:relative;z-index:2
+}
+.menu button{
+  min-height:0;border:none;cursor:pointer;background:rgba(255,255,255,.94);border-radius:26px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:9px;padding:14px 12px;font-size:clamp(1rem,4vw,1.25rem);font-weight:900;color:var(--green-dark);
+  transition:transform .12s,box-shadow .12s
+}
+.menu button:active{transform:scale(.97);box-shadow:var(--shadow-soft)}
+.menu button .emoji{font-size:clamp(2.3rem,10vw,3.4rem)}
+.badge{position:fixed;bottom:8px;right:10px;font-size:.68rem;color:rgba(38,50,56,.4)}
+
+/* COMMON CARD */
+.panel{
+  background:rgba(255,255,255,.90);border:1px solid rgba(255,255,255,.85);
+  border-radius:28px;box-shadow:var(--shadow);backdrop-filter:blur(8px)
+}
+
+/* DRAW */
+#draw{align-items:center;padding:8px 10px 14px}
+#draw .zona{
+  flex:1;min-height:0;width:100%;max-width:560px;display:flex;flex-direction:column;
+  align-items:center;gap:10px;position:relative;z-index:2
+}
+.letras{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.letras button{
+  width:48px;height:48px;border-radius:16px;border:none;cursor:pointer;
+  font-size:1.3rem;font-weight:900;background:#fff;color:var(--green-dark);box-shadow:var(--shadow-soft)
+}
+.letras button.sel{background:var(--green);color:#fff;transform:translateY(-2px)}
+#canvasWrap{
+  position:relative;width:min(100%,480px,52vh);aspect-ratio:1/1;background:#fff;
+  border:5px solid #fff;border-radius:28px;overflow:hidden;box-shadow:var(--shadow)
+}
+#canvasWrap::after{
+  content:"";position:absolute;inset:0;border:3px dashed #D8EEE0;border-radius:23px;pointer-events:none
+}
+#canvasWrap canvas{position:absolute;inset:0;width:100%;height:100%}
+#drawCanvas{cursor:crosshair;touch-action:none}
+.resultado{min-height:1.45em;font-weight:900;font-size:1.1rem;color:var(--green-dark)}
+.botones{display:flex;gap:10px}
+.botones button,.restart,.nextBtn{
+  border:none;cursor:pointer;padding:10px 18px;border-radius:999px;font-weight:900;font-size:1rem;box-shadow:var(--shadow-soft)
+}
+.btn-ok{background:var(--green);color:#fff}
+.btn-clear{background:var(--yellow);color:#5E4B00}
+
+/* TALK */
+#talk{align-items:center;padding:8px 10px 16px;gap:8px}
+
+.talkMenuWrap{
+  flex:1;width:100%;max-width:520px;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:16px;padding:18px;position:relative;z-index:2
+}
+.talkMenu{
+  width:100%;display:grid;grid-template-columns:1fr 1fr;gap:14px
+}
+.talkMenu button{
+  min-height:190px;border:none;cursor:pointer;border-radius:28px;background:rgba(255,255,255,.94);
+  box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:center;align-items:center;
+  gap:12px;color:var(--green-dark);font-size:1.35rem;font-weight:900
+}
+.talkMenu button:active{transform:scale(.97)}
+.talkMenuEmoji{font-size:3.6rem}
+.talkStandalone{
+  flex:1;min-height:0;width:100%;max-width:540px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:18px;position:relative;z-index:2
+}
+#talkVowels,#talkWords{align-items:center;padding:8px 10px 16px}
+.tabs{
+  display:flex;gap:6px;justify-content:center;background:rgba(255,255,255,.48);
+  padding:5px;border-radius:999px;position:relative;z-index:2
+}
+.tabs button{
+  border:none;cursor:pointer;padding:9px 20px;border-radius:999px;font-weight:900;
+  background:transparent;color:var(--green-dark)
+}
+.tabs button.sel{background:#fff;box-shadow:0 3px 10px rgba(31,84,55,.12)}
+#talk .zona{
+  flex:1;min-height:0;width:100%;max-width:540px;display:flex;flex-direction:column;
+  align-items:center;gap:12px;justify-content:center;position:relative;z-index:2
+}
+.vocales{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.vocal{
+  width:64px;height:82px;border-radius:20px;border:3px solid transparent;cursor:pointer;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--shadow-soft);font-weight:900
+}
+.vocal .l{font-size:1.65rem;color:var(--green-dark)}
+.vocal .w{font-size:1.3rem}
+.vocal.sel{border-color:var(--green);transform:translateY(-4px)}
+.primary-mic{
+  border:none;cursor:pointer;padding:15px 27px;border-radius:999px;font-weight:900;color:#fff;
+  font-size:1.08rem;background:var(--green);box-shadow:0 7px 20px rgba(79,180,119,.32)
+}
+.primary-mic:disabled{background:#BAC7C0;box-shadow:none;cursor:default}
+#wave{width:min(100%,460px);height:105px;border-radius:18px;background:#F2FAF5;display:none}
+.feedback{
+  text-align:center;min-height:2em;background:rgba(255,255,255,.72);
+  padding:8px 14px;border-radius:18px;min-width:250px
+}
+.feedback:empty{padding:0;min-height:0}
+.feedback h3{color:var(--green-dark);font-size:1.25rem}
+.feedback p{color:var(--muted)}
+.palabraCard{
+  display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;border-radius:30px;
+  padding:18px 42px;box-shadow:var(--shadow);min-width:min(88vw,330px)
+}
+.palabraCard .pe{font-size:4.2rem;line-height:1}
+.palabraCard .pt{font-size:2rem;font-weight:900;color:var(--green-dark)}
+.mic-status{
+  display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.75);padding:7px 12px;border-radius:999px;
+  color:var(--muted);font-size:.86rem;font-weight:800
+}
+.mic-dot{width:9px;height:9px;border-radius:50%;background:#B0BEC5}
+.mic-dot.ok{background:var(--green)}
+.mic-dot.bad{background:var(--red)}
+.nextBtn{color:var(--green-dark);background:rgba(255,255,255,.88)}
+
+/* SIGN */
+#sign{align-items:center;padding:8px 10px 14px;gap:9px}
+#sign .dots{display:flex;gap:9px;position:relative;z-index:2}
+#sign .dot{
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:900;background:rgba(255,255,255,.75);color:var(--green-dark);box-shadow:var(--shadow-soft)
+}
+#sign .dot.active{background:var(--purple);color:#fff;transform:scale(1.12)}
+#sign .dot.done{background:var(--green);color:#fff}
+#camWrap{
+  position:relative;width:min(100%,520px,56vh);aspect-ratio:4/3;border-radius:28px;overflow:hidden;
+  border:6px solid #fff;box-shadow:var(--shadow);background:#000;z-index:2
+}
+#camWrap.win{border-color:var(--green)}
+#camWrap video,#camWrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#signHint{
+  position:absolute;top:14px;left:14px;background:rgba(255,255,255,.92);padding:8px 17px;border-radius:16px;font-weight:900
+}
+#signHint span{color:#D94E4E}
+#signDesc{color:var(--green-dark);font-weight:900;text-align:center;padding:0 10px;z-index:2}
+#signWin{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:3rem;
+  color:#fff;text-shadow:0 4px 12px rgba(0,0,0,.4);font-weight:900
+}
+#signError{
+  display:none;color:#8A2D2D;background:#FFF0F0;padding:14px 18px;border-radius:18px;max-width:460px;text-align:center;z-index:2
+}
+
+/* MATCH - DRAG LINE */
+#match{align-items:center;padding:8px 10px 14px;gap:8px}
+.matchShell{
+  flex:1;min-height:0;width:100%;max-width:590px;position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px
+}
+.matchHint{
+  background:rgba(255,255,255,.78);padding:7px 13px;border-radius:999px;color:var(--muted);
+  font-weight:800;font-size:.88rem;text-align:center
+}
+.matchZona{
+  position:relative;width:100%;min-height:0;flex:1;display:flex;gap:46px;justify-content:center;align-items:center;
+  padding:10px 4px;touch-action:none
+}
+.matchLines{
+  position:absolute;inset:0;width:100%;height:100%;z-index:1;overflow:visible;pointer-events:none
+}
+.mcol{flex:1;display:flex;flex-direction:column;gap:10px;justify-content:center;z-index:2}
+.mword,.memo{
+  position:relative;border:none;cursor:grab;border-radius:18px;padding:12px;font-weight:900;
+  box-shadow:var(--shadow-soft);background:#fff;min-height:56px;user-select:none;-webkit-user-select:none
+}
+.mword{color:var(--green-dark);font-size:clamp(1rem,4vw,1.3rem);padding-right:34px}
+.memo{font-size:clamp(2rem,8vw,2.6rem);padding-left:34px}
+.mword::after,.memo::before{
+  content:"";position:absolute;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;
+  background:#fff;border:4px solid var(--purple);box-shadow:0 2px 7px rgba(0,0,0,.12)
+}
+.mword::after{right:-7px}
+.memo::before{left:-7px}
+.mword.dragging{outline:4px solid rgba(120,104,230,.25)}
+.mword.locked,.memo.locked{background:#EDF9F1;color:var(--green-dark);cursor:default;box-shadow:none}
+.mword.locked::after,.memo.locked::before{border-color:var(--green);background:var(--green)}
+.memo.bad{animation:shake .28s linear 1;background:#FFF0F0}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.matchMsg{color:var(--green-dark);font-weight:900;font-size:1.25rem;min-height:1.4em;text-align:center}
+.restart{color:#fff;background:var(--purple)}
+
+@media (max-width:390px){
+  .talkMenu{grid-template-columns:1fr}
+  .talkMenu button{min-height:140px}
+  .menu{gap:9px}
+  .menu button{border-radius:22px}
+  .matchZona{gap:30px}
+  .mword,.memo{padding-top:10px;padding-bottom:10px}
+}
+</style>
+</head>
+<body>
+
+<section id="home" class="view active">
+  <div class="brand">
+    <h1>🦎 ContuVoz</h1>
+    <p class="sub">Aprender, hablar y jugar a tu ritmo</p>
+  </div>
+  <div class="menu">
+    <button onclick="go('draw')"><span class="emoji">🎨</span><span>Pinta Letras</span></button>
+    <button onclick="go('talk')"><span class="emoji">🗣️</span><span>Hablemos</span></button>
+    <button onclick="go('sign')"><span class="emoji">✋</span><span>Lengua de Señas</span></button>
+    <button onclick="go('match')"><span class="emoji">🧩</span><span>Une Palabras</span></button>
+  </div>
+  <div class="badge">ContuVoz</div>
+</section>
+
+<section id="draw" class="view">
+  <button class="back-btn" onclick="go('home')">🏠 Inicio</button>
+  <div class="titulo">🎨 Pinta la letra</div>
+  <div class="zona">
+    <div class="letras" id="letras"></div>
+    <div id="canvasWrap">
+      <canvas id="bgCanvas"></canvas>
+      <canvas id="drawCanvas"></canvas>
+    </div>
+    <div class="resultado" id="drawResult"></div>
+    <div class="botones">
+      <button class="btn-ok" onclick="verifyDraw()">Verificar ✅</button>
+      <button class="btn-clear" onclick="clearDraw()">Borrar 🧹</button>
+    </div>
+  </div>
+</section>
+
+
+<section id="talk" class="view">
+  <button class="back-btn" onclick="go('home')">🏠 Inicio</button>
+  <div class="titulo">🗣️ Hablemos</div>
+
+  <div class="talkMenuWrap">
+    <p class="helper">¿Qué quieres practicar?</p>
+    <div class="talkMenu">
+      <button onclick="go('talkVowels')">
+        <span class="talkMenuEmoji">🔤</span>
+        <span>Vocales</span>
+      </button>
+      <button onclick="go('talkWords')">
+        <span class="talkMenuEmoji">💬</span>
+        <span>Palabras</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<section id="talkVowels" class="view">
+  <button class="back-btn" onclick="go('talk')">← Hablemos</button>
+  <div class="titulo">🔤 Hablemos · Vocales</div>
+  <div class="talkStandalone">
+    <div class="vocales" id="vocales"></div>
+    <button id="micBtn" class="primary-mic" onclick="startListening()" disabled>🎤 Elige una vocal</button>
+    <canvas id="wave" width="600" height="140"></canvas>
+    <div class="feedback" id="talkFeedback"></div>
+  </div>
+</section>
+
+<section id="talkWords" class="view">
+  <button class="back-btn" onclick="go('talk')">← Hablemos</button>
+  <div class="titulo">💬 Hablemos · Palabras</div>
+  <div class="talkStandalone">
+    <div class="palabraCard">
+      <span class="pe" id="palabraEmoji">🐶</span>
+      <span class="pt" id="palabraTexto">perro</span>
+    </div>
+
+    <div class="mic-status">
+      <span id="micStatusDot" class="mic-dot"></span>
+      <span id="micStatusText">Micrófono listo para solicitar permiso</span>
+    </div>
+
+    <button id="palabraBtn" class="primary-mic" onclick="decirPalabra()">🎤 Decir la palabra</button>
+    <button class="nextBtn" onclick="nextPalabra()">Siguiente palabra ➡️</button>
+    <div class="feedback" id="palabraFeedback"></div>
+  </div>
+</section>
+
+<section id="sign" class="view">
+  <button class="back-btn" onclick="go('home')">🏠 Inicio</button>
+  <div class="titulo">✋ Practiquemos señas</div>
+  <div class="dots" id="signDots"></div>
+  <div id="camWrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="signCanvas"></canvas>
+    <div id="signHint">Haz la letra <span id="signLetter">A</span></div>
+    <div id="signWin">¡Excelente! 🎉</div>
+  </div>
+  <div id="signDesc"></div>
+  <div id="signError"></div>
+</section>
+
+<section id="match" class="view">
+  <button class="back-btn" onclick="go('home')">🏠 Inicio</button>
+  <div class="titulo">🧩 Une palabra y dibujo</div>
+
+  <div class="matchShell">
+    <div class="matchHint">Mantén presionada una palabra y arrastra la línea hasta su dibujo.</div>
+    <div class="matchZona" id="matchZona">
+      <svg id="matchLines" class="matchLines" aria-hidden="true"></svg>
+      <div class="mcol" id="matchWords"></div>
+      <div class="mcol" id="matchEmos"></div>
+    </div>
+    <div id="matchMsg" class="matchMsg"></div>
+    <button class="restart" onclick="initMatch()">🔄 Reiniciar</button>
+  </div>
+</section>
+
+<script type="module">
+/* =========================
+   NAVEGACIÓN
+========================= */
+window.go = function(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  location.hash=id;
+
+  if(id==='sign') initSign(); else stopSign();
+  if(id==='match' && window.initMatch) setTimeout(initMatch,0);
+
+  if(id==='talkWords'){
+    renderPalabra();
+    actualizarEstadoMicro();
+  } else {
+    stopWords();
+  }
+};
+
+window.addEventListener('load',()=>{
+  const h=(location.hash||'#home').slice(1);
+  if(document.getElementById(h)) go(h); else go('home');
+});
+
+/* =========================
+   PINTA LETRAS
+========================= */
+const LETRAS=['A','E','I','O','U'];
+let letraActual='A';
+const CANVAS_SIZE=500;
+let bgCanvas,drawCanvas,bgCtx,drawCtx,dibujando=false;
+
+(function initDraw(){
+  const cont=document.getElementById('letras');
+  LETRAS.forEach(l=>{
+    const b=document.createElement('button');
+    b.textContent=l;
+    b.onclick=()=>{letraActual=l;renderLetras();resetDraw();};
+    cont.appendChild(b);
+  });
+  renderLetras();
+
+  bgCanvas=document.getElementById('bgCanvas');
+  drawCanvas=document.getElementById('drawCanvas');
+  bgCanvas.width=drawCanvas.width=CANVAS_SIZE;
+  bgCanvas.height=drawCanvas.height=CANVAS_SIZE;
+  bgCtx=bgCanvas.getContext('2d',{willReadFrequently:true});
+  drawCtx=drawCanvas.getContext('2d',{willReadFrequently:true});
+  drawCtx.lineWidth=22;
+  drawCtx.lineCap='round';
+  drawCtx.lineJoin='round';
+  drawCtx.strokeStyle='rgba(120,104,230,.72)';
+
+  const start=e=>{
+    dibujando=true;
+    const p=coords(e);
+    drawCtx.beginPath();
+    drawCtx.moveTo(p.x,p.y);
+  };
+  const move=e=>{
+    if(!dibujando)return;
+    e.preventDefault();
+    const p=coords(e);
+    drawCtx.lineTo(p.x,p.y);
+    drawCtx.stroke();
+  };
+  const end=()=>{dibujando=false;drawCtx.closePath();};
+
+  drawCanvas.addEventListener('mousedown',start);
+  drawCanvas.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  drawCanvas.addEventListener('touchstart',start,{passive:false});
+  drawCanvas.addEventListener('touchmove',move,{passive:false});
+  drawCanvas.addEventListener('touchend',end);
+
+  drawGuide();
+})();
+
+function renderLetras(){
+  document.querySelectorAll('#letras button').forEach(b=>b.classList.toggle('sel',b.textContent===letraActual));
+}
+function coords(e){
+  const r=drawCanvas.getBoundingClientRect();
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  const cy=e.touches?e.touches[0].clientY:e.clientY;
+  return{
+    x:(cx-r.left)*(drawCanvas.width/r.width),
+    y:(cy-r.top)*(drawCanvas.height/r.height)
+  };
+}
+function drawGuide(){
+  const paint=()=>{
+    bgCtx.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+    bgCtx.fillStyle='#E2E6FF';
+    bgCtx.textAlign='center';
+    bgCtx.textBaseline='middle';
+    bgCtx.font="400 300px 'Playwrite CL', cursive";
+    bgCtx.fillText(letraActual.toLowerCase(),CANVAS_SIZE/2,CANVAS_SIZE/2+10);
+  };
+  if(document.fonts?.load) document.fonts.load("300px 'Playwrite CL'").then(paint).catch(paint);
+  else paint();
+}
+function resetDraw(){clearDraw();drawGuide();}
+window.clearDraw=function(){
+  drawCtx.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+  document.getElementById('drawResult').textContent='';
+};
+window.verifyDraw=function(){
+  const bg=bgCtx.getImageData(0,0,CANVAS_SIZE,CANVAS_SIZE).data;
+  const dr=drawCtx.getImageData(0,0,CANVAS_SIZE,CANVAS_SIZE).data;
+  let target=0,cover=0,outside=0;
+  for(let i=0;i<bg.length;i+=4){
+    const isL=bg[i+3]>50,isP=dr[i+3]>50;
+    if(isL){target++;if(isP)cover++;}
+    else if(isP)outside++;
+  }
+  if(!target)return;
+  let score=(cover/target)*100-(outside/target)*100*.75;
+  if(score<0)score=0;
+  const el=document.getElementById('drawResult');
+  if(score>85)el.textContent='¡Perfecto! 🌟';
+  else if(score>60)el.textContent='¡Muy bien! 👏';
+  else if(score>30)el.textContent='Cuida los bordes 🎯';
+  else el.textContent='Inténtalo de nuevo 💪';
+};
+
+/* =========================
+   HABLEMOS — VOCALES
+========================= */
+const VOCAL_DATA=[
+  {l:'A',w:'🦅',f1:750,f2:1350},
+  {l:'E',w:'⭐',f1:480,f2:2000},
+  {l:'I',w:'🏝️',f1:300,f2:2600},
+  {l:'O',w:'🐻',f1:500,f2:900},
+  {l:'U',w:'🍇',f1:350,f2:850},
+];
+const REFS=Object.fromEntries(VOCAL_DATA.map(v=>[v.l,{f1:v.f1,f2:v.f2}]));
+let vocalSel=null,escuchando=false;
+
+(function initTalk(){
+  const cont=document.getElementById('vocales');
+  VOCAL_DATA.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='vocal';
+    d.innerHTML=`<span class="l">${v.l}</span><span class="w">${v.w}</span>`;
+    d.onclick=()=>{
+      if(escuchando)return;
+      vocalSel=v.l;
+      document.querySelectorAll('.vocal').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      const btn=document.getElementById('micBtn');
+      btn.disabled=false;
+      btn.textContent=`🎤 Practicar la ${v.l}`;
+      document.getElementById('talkFeedback').innerHTML='';
+    };
+    cont.appendChild(d);
+  });
+})();
+
+window.startListening=async function(){
+  if(!vocalSel||escuchando)return;
+  const btn=document.getElementById('micBtn');
+  const fb=document.getElementById('talkFeedback');
+  const wave=document.getElementById('wave');
+  fb.innerHTML='';
+
+  if(!navigator.mediaDevices?.getUserMedia){
+    fb.innerHTML='<p>Este navegador no puede abrir el micrófono.</p>';
+    return;
+  }
+
+  let stream;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+  }catch{
+    fb.innerHTML='<p>No pude acceder al micrófono. Revisa el permiso del navegador 🎤</p>';
+    return;
+  }
+
+  escuchando=true;
+  btn.disabled=true;
+
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  const ctx=new AudioCtx();
+  const src=ctx.createMediaStreamSource(stream);
+  const analyser=ctx.createAnalyser();
+  analyser.fftSize=4096;
+  analyser.smoothingTimeConstant=0;
+  src.connect(analyser);
+
+  const bins=analyser.frequencyBinCount;
+  const binHz=ctx.sampleRate/analyser.fftSize;
+  const freqDb=new Float32Array(bins);
+  const timeData=new Uint8Array(analyser.fftSize);
+  const accum=new Float64Array(bins);
+  let voiced=0;
+
+  wave.style.display='block';
+  const wctx=wave.getContext('2d');
+  let raf;
+
+  (function drawWave(){
+    raf=requestAnimationFrame(drawWave);
+    analyser.getByteTimeDomainData(timeData);
+    wctx.fillStyle='#F2FAF5';
+    wctx.fillRect(0,0,wave.width,wave.height);
+    wctx.lineWidth=3;
+    wctx.strokeStyle='#4FB477';
+    wctx.beginPath();
+    const slice=wave.width/timeData.length;
+    let x=0;
+    for(let i=0;i<timeData.length;i++){
+      const y=(timeData[i]/128)*wave.height/2;
+      i?wctx.lineTo(x,y):wctx.moveTo(x,y);
+      x+=slice;
+    }
+    wctx.stroke();
+  })();
+
+  let seg=2;
+  btn.textContent=`🎙️ Escuchando... ${seg}s`;
+
+  const tick=setInterval(()=>{
+    analyser.getByteTimeDomainData(timeData);
+    let s=0;
+    for(let i=0;i<timeData.length;i++){
+      const v=(timeData[i]-128)/128;
+      s+=v*v;
+    }
+    if(Math.sqrt(s/timeData.length)>.015){
+      analyser.getFloatFrequencyData(freqDb);
+      for(let i=0;i<bins;i++) accum[i]+=freqDb[i]>-140?Math.pow(10,freqDb[i]/20):0;
+      voiced++;
+    }
+  },30);
+
+  const cd=setInterval(()=>{
+    seg--;
+    btn.textContent=`🎙️ Escuchando... ${Math.max(seg,0)}s`;
+    if(seg<=0)clearInterval(cd);
+  },1000);
+
+  setTimeout(async()=>{
+    clearInterval(tick);
+    clearInterval(cd);
+    cancelAnimationFrame(raf);
+    wave.style.display='none';
+    stream.getTracks().forEach(t=>t.stop());
+    try{await ctx.close();}catch{}
+    escuchando=false;
+    btn.disabled=false;
+    btn.textContent=`🎤 Practicar la ${vocalSel}`;
+
+    if(voiced<12){showTalk(false,null);return;}
+    const env=smooth(accum,6);
+    const f1=peak(env,binHz,200,900);
+    const f2=peak(env,binHz,900,2800);
+    const det=classify(f1,f2);
+    showTalk(det===vocalSel,det);
+  },2000);
+};
+
+function showTalk(ok,said){
+  const fb=document.getElementById('talkFeedback');
+  if(ok)fb.innerHTML=`<h3>¡Muy bien! 🎉</h3><p>Dijiste la "${vocalSel}"</p>`;
+  else if(!said)fb.innerHTML='<h3>Probemos otra vez 💪</h3><p>Habla un poco más cerca del micrófono.</p>';
+  else fb.innerHTML=`<h3>¡Casi! 💪</h3><p>Escuché una "${said}". Practiquemos la "${vocalSel}".</p>`;
+}
+function smooth(d,r){
+  const o=new Float64Array(d.length);
+  for(let i=0;i<d.length;i++){
+    let s=0,n=0;
+    for(let j=i-r;j<=i+r;j++){
+      if(j>=0&&j<d.length){s+=d[j];n++;}
+    }
+    o[i]=s/n;
+  }
+  return o;
+}
+function peak(env,binHz,min,max){
+  const a=Math.max(1,Math.floor(min/binHz));
+  const b=Math.min(env.length-1,Math.ceil(max/binHz));
+  let bi=a,bv=-Infinity;
+  for(let i=a;i<=b;i++){
+    if(env[i]>bv){bv=env[i];bi=i;}
+  }
+  return bi*binHz;
+}
+function classify(f1,f2){
+  let best='A',bd=Infinity;
+  for(const k in REFS){
+    const r=REFS[k];
+    const d=Math.hypot(Math.log(f1/r.f1),Math.log(f2/r.f2));
+    if(d<bd){bd=d;best=k;}
+  }
+  return best;
+}
+
+/* =========================
+   LENGUA DE SEÑAS
+========================= */
+const VOWELS=['A','E','I','O','U'];
+const SIGN_DESC={
+  A:'Cierra el puño con el pulgar al lado.',
+  E:'Encoge tus dedos como una garra.',
+  I:'Levanta solo el dedo meñique.',
+  O:'Forma un círculo con tus dedos.',
+  U:'Levanta el índice y el meñique (cachos).',
+};
+let handLandmarker,drawingUtilsLib,HandLandmarkerClass,signStream,signRaf,signIdx=0,validFrames=0,signCorrect=false,signSmoothed=null,signStarted=false;
+
+(function initSignDots(){
+  const cont=document.getElementById('signDots');
+  VOWELS.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='dot';
+    d.textContent=v;
+    cont.appendChild(d);
+  });
+})();
+
+async function initSign(){
+  if(signStarted)return;
+  signStarted=true;
+  const errBox=document.getElementById('signError');
+  errBox.style.display='none';
+
+  try{
+    const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32');
+    drawingUtilsLib=vision.DrawingUtils;
+    HandLandmarkerClass=vision.HandLandmarker;
+    const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm');
+    handLandmarker=await vision.HandLandmarker.createFromOptions(fileset,{
+      baseOptions:{
+        modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        delegate:'GPU'
+      },
+      runningMode:'VIDEO',
+      numHands:1,
+      minHandDetectionConfidence:.6,
+      minHandPresenceConfidence:.6,
+      minTrackingConfidence:.6
+    });
+
+    signStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}
+    });
+
+    const video=document.getElementById('video');
+    video.srcObject=signStream;
+    video.onloadedmetadata=()=>{video.play();loopSign();};
+    updateSignUI();
+  }catch(e){
+    console.error(e);
+    signStarted=false;
+    errBox.style.display='block';
+    errBox.textContent='⚠️ No se pudo iniciar la cámara. Abre la página con HTTPS y permite el acceso a la cámara.';
+  }
+}
+
+function loopSign(){
+  const video=document.getElementById('video');
+  const canvas=document.getElementById('signCanvas');
+  const ctx=canvas.getContext('2d');
+  const du=new drawingUtilsLib(ctx);
+
+  const render=()=>{
+    if(!signStarted)return;
+    if(canvas.width!==video.videoWidth&&video.videoWidth){
+      canvas.width=video.videoWidth;
+      canvas.height=video.videoHeight;
+    }
+
+    let res=null;
+    try{res=handLandmarker.detectForVideo(video,performance.now());}catch{}
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if(res?.landmarks?.length){
+      const hand=smoothHand(res.landmarks[0]);
+      du.drawConnectors(hand,HandLandmarkerClass.HAND_CONNECTIONS,{
+        color:signCorrect?'#00FF00':'#00ACC1',
+        lineWidth:5
+      });
+
+      if(checkVowel(hand,VOWELS[signIdx])){
+        validFrames++;
+        if(validFrames>15&&!signCorrect)winSign();
+      }else validFrames=0;
+    }else signSmoothed=null;
+
+    signRaf=requestAnimationFrame(render);
+  };
+  render();
+}
+function smoothHand(hand){
+  const a=.5;
+  if(!signSmoothed||signSmoothed.length!==hand.length){
+    signSmoothed=hand.map(p=>({...p}));
+    return signSmoothed;
+  }
+  for(let i=0;i<hand.length;i++){
+    signSmoothed[i]={
+      x:signSmoothed[i].x+(hand[i].x-signSmoothed[i].x)*a,
+      y:signSmoothed[i].y+(hand[i].y-signSmoothed[i].y)*a,
+      z:(signSmoothed[i].z||0)+((hand[i].z||0)-(signSmoothed[i].z||0))*a,
+    };
+  }
+  return signSmoothed;
+}
+function winSign(){
+  signCorrect=true;
+  document.getElementById('camWrap').classList.add('win');
+  document.getElementById('signWin').style.display='flex';
+
+  setTimeout(()=>{
+    signCorrect=false;
+    validFrames=0;
+    document.getElementById('camWrap').classList.remove('win');
+    document.getElementById('signWin').style.display='none';
+    signIdx=(signIdx+1)%VOWELS.length;
+    updateSignUI();
+  },2000);
+}
+function updateSignUI(){
+  document.getElementById('signLetter').textContent=VOWELS[signIdx];
+  document.getElementById('signDesc').textContent=SIGN_DESC[VOWELS[signIdx]];
+  document.querySelectorAll('#signDots .dot').forEach((d,i)=>{
+    d.classList.toggle('active',i===signIdx);
+    d.classList.toggle('done',i<signIdx);
+  });
+}
+function stopSign(){
+  if(signRaf)cancelAnimationFrame(signRaf);
+  if(signStream)signStream.getTracks().forEach(t=>t.stop());
+  signStream=null;
+  signStarted=false;
+}
+function checkVowel(lm,target){
+  const thumb=lm[4],index=lm[8],middle=lm[12],ring=lm[16],pinky=lm[20];
+  const indexUp=index.y<lm[6].y;
+  const middleUp=middle.y<lm[10].y;
+  const ringUp=ring.y<lm[14].y;
+  const pinkyUp=pinky.y<lm[18].y;
+
+  switch(target){
+    case'A':return !indexUp&&!middleUp&&!ringUp&&!pinkyUp;
+    case'E':{
+      const pinkyCurved=pinky.y>lm[18].y;
+      const allCurved=index.y>lm[7].y&&middle.y>lm[11].y&&ring.y>lm[15].y;
+      const thumbOut=Math.abs(thumb.x-lm[5].x)>.08;
+      return allCurved&&pinkyCurved&&thumbOut;
+    }
+    case'I':{
+      const pinkyStrict=pinky.y<lm[18].y&&lm[19].y<lm[18].y;
+      const down=index.y>lm[6].y&&middle.y>lm[10].y&&ring.y>lm[14].y;
+      const thumbTuck=Math.abs(thumb.x-lm[5].x)<.08;
+      return pinkyStrict&&down&&thumbTuck;
+    }
+    case'O':{
+      const dTI=Math.hypot(thumb.x-index.x,thumb.y-index.y);
+      const dTM=Math.hypot(thumb.x-middle.x,thumb.y-middle.y);
+      const notFist=Math.hypot(index.x-lm[0].x,index.y-lm[0].y)>.2;
+      return dTI<.06&&dTM<.06&&notFist;
+    }
+    case'U':return indexUp&&pinkyUp&&!middleUp&&!ringUp;
+    default:return false;
+  }
+}
+
+/* =========================
+   HABLEMOS — PALABRAS
+   Mejorado: permiso de micrófono + diagnóstico + SpeechRecognition
+========================= */
+const PALABRAS=[
+  {w:'perro',e:'🐶'},{w:'gato',e:'🐱'},{w:'sol',e:'☀️'},
+  {w:'luna',e:'🌙'},{w:'oso',e:'🐻'},{w:'pato',e:'🦆'},
+  {w:'mano',e:'✋'},{w:'manzana',e:'🍎'},{w:'pez',e:'🐟'},
+];
+let palabraIdx=0;
+let recog=null;
+let permisoMic=false;
+let palabraEscuchando=false;
+
+function renderPalabra(){
+  const p=PALABRAS[palabraIdx];
+  document.getElementById('palabraEmoji').textContent=p.e;
+  document.getElementById('palabraTexto').textContent=p.w;
+  document.getElementById('palabraFeedback').innerHTML='';
+}
+window.nextPalabra=function(){
+  palabraIdx=(palabraIdx+1)%PALABRAS.length;
+  renderPalabra();
+};
+
+function getSpeechRecognition(){
+  return window.SpeechRecognition||window.webkitSpeechRecognition||null;
+}
+
+function setMicStatus(text,state=''){
+  const dot=document.getElementById('micStatusDot');
+  const label=document.getElementById('micStatusText');
+  if(!dot||!label)return;
+  dot.className='mic-dot'+(state?' '+state:'');
+  label.textContent=text;
+}
+
+function actualizarEstadoMicro(){
+  const SR=getSpeechRecognition();
+
+  if(!window.isSecureContext && location.protocol!=='file:'){
+    setMicStatus('Abre la página con HTTPS para usar el micrófono','bad');
+    return;
+  }
+
+  if(!navigator.mediaDevices?.getUserMedia){
+    setMicStatus('Este navegador no permite acceder al micrófono','bad');
+    return;
+  }
+
+  if(!SR){
+    setMicStatus('Tu navegador abre el micrófono, pero no reconoce palabras','bad');
+    return;
+  }
+
+  setMicStatus(permisoMic?'Micrófono autorizado':'Toca el botón para autorizar el micrófono',permisoMic?'ok':'');
+}
+
+async function pedirPermisoMicro(){
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error('unsupported-media');
+  const stream=await navigator.mediaDevices.getUserMedia({
+    audio:{
+      echoCancellation:true,
+      noiseSuppression:true,
+      autoGainControl:true
+    }
+  });
+
+  permisoMic=true;
+  stream.getTracks().forEach(t=>t.stop());
+  setMicStatus('Micrófono autorizado','ok');
+}
+
+window.decirPalabra=async function(){
+  if(palabraEscuchando)return;
+
+  const fb=document.getElementById('palabraFeedback');
+  const btn=document.getElementById('palabraBtn');
+  const SR=getSpeechRecognition();
+
+  fb.innerHTML='';
+
+  if(!window.isSecureContext && location.protocol!=='file:'){
+    fb.innerHTML='<p>El micrófono necesita una página HTTPS. Si lo estás abriendo desde un hosting, usa la versión HTTPS.</p>';
+    setMicStatus('Se necesita HTTPS','bad');
+    return;
+  }
+
+  if(!navigator.mediaDevices?.getUserMedia){
+    fb.innerHTML='<p>Este navegador no permite abrir el micrófono.</p>';
+    setMicStatus('Micrófono no disponible','bad');
+    return;
+  }
+
+  try{
+    if(!permisoMic){
+      btn.disabled=true;
+      btn.textContent='🎤 Solicitando permiso...';
+      await pedirPermisoMicro();
+    }
+  }catch(e){
+    console.error(e);
+    btn.disabled=false;
+    btn.textContent='🎤 Decir la palabra';
+    fb.innerHTML='<p>No pude acceder al micrófono. Revisa el ícono de permisos del navegador y selecciona “Permitir”.</p>';
+    setMicStatus('Permiso de micrófono bloqueado','bad');
+    return;
+  }
+
+  if(!SR){
+    btn.disabled=false;
+    btn.textContent='🎤 Decir la palabra';
+    fb.innerHTML='<p>El micrófono sí funciona, pero este navegador no ofrece reconocimiento de palabras. Para esta actividad usa Chrome o Edge.</p>';
+    setMicStatus('Reconocimiento de voz no compatible','bad');
+    return;
+  }
+
+  const target=PALABRAS[palabraIdx].w;
+  recog=new SR();
+  recog.lang='es-CL';
+  recog.interimResults=false;
+  recog.maxAlternatives=7;
+  recog.continuous=false;
+
+  palabraEscuchando=true;
+  btn.disabled=true;
+  btn.textContent='🎙️ Escuchando...';
+  setMicStatus('Escuchando tu voz...','ok');
+
+  let finished=false;
+  let timer=null;
+
+  const cleanup=()=>{
+    if(timer)clearTimeout(timer);
+    palabraEscuchando=false;
+    btn.disabled=false;
+    btn.textContent='🎤 Decir la palabra';
+    recog=null;
+    setMicStatus('Micrófono autorizado','ok');
+  };
+
+  const finish=(html,avanzar=false)=>{
+    if(finished)return;
+    finished=true;
+    try{recog?.stop();}catch{}
+    cleanup();
+    if(html)fb.innerHTML=html;
+    if(avanzar)setTimeout(window.nextPalabra,1300);
+  };
+
+  recog.onstart=()=>{
+    setMicStatus('Escuchando tu voz...','ok');
+  };
+
+  recog.onspeechstart=()=>{
+    btn.textContent='🗣️ Te escucho...';
+  };
+
+  recog.onresult=(ev)=>{
+    const alternatives=Array.from(ev.results[0]);
+    const heard=alternatives[0]?.transcript||'';
+    const ok=alternatives.some(a=>{
+      const t=norm(a.transcript);
+      const trg=norm(target);
+      return t===trg || t.includes(trg);
+    });
+
+    if(ok){
+      speak(target);
+      finish(`<h3>¡Muy bien! 🎉</h3><p>Dijiste "${target}"</p>`,true);
+    }else{
+      finish(`<h3>Probemos otra vez 💪</h3><p>Escuché "${heard}". Di "${target}" un poco más cerca del micrófono.</p>`);
+    }
+  };
+
+  recog.onerror=(e)=>{
+    console.error('SpeechRecognition error:',e?.error);
+    let msg='No te escuché bien. Intenta otra vez.';
+    if(e?.error==='not-allowed'||e?.error==='service-not-allowed'){
+      msg='El navegador bloqueó el micrófono. Revisa los permisos del sitio.';
+      setMicStatus('Permiso de micrófono bloqueado','bad');
+    }else if(e?.error==='no-speech'){
+      msg='No escuché ninguna palabra. Habla más cerca del micrófono.';
+    }else if(e?.error==='network'){
+      msg='El reconocimiento de voz necesita conexión a internet en este navegador.';
+    }else if(e?.error==='audio-capture'){
+      msg='No encontré un micrófono disponible.';
+      setMicStatus('No se encontró micrófono','bad');
+    }
+    finish(`<p>${msg} 🎤</p>`);
+  };
+
+  recog.onend=()=>{
+    if(!finished)finish('<p>No alcancé a reconocer la palabra. Intenta otra vez 🎤</p>');
+  };
+
+  timer=setTimeout(()=>{
+    finish('<p>No escuché una palabra a tiempo. Prueba nuevamente 🎤</p>');
+  },9000);
+
+  try{
+    recog.start();
+  }catch(e){
+    console.error(e);
+    finish('<p>No se pudo iniciar el reconocimiento de voz. Intenta nuevamente.</p>');
+  }
+};
+
+function norm(s){
+  return s.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zñ]/g,'');
+}
+function speak(t){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang='es-CL';
+    speechSynthesis.speak(u);
+  }catch{}
+}
+function stopWords(){
+  if(recog){
+    try{recog.abort();}catch{}
+    recog=null;
+  }
+  palabraEscuchando=false;
+  const b=document.getElementById('palabraBtn');
+  if(b){
+    b.disabled=false;
+    b.textContent='🎤 Decir la palabra';
+  }
+}
+
+/* =========================
+   UNE PALABRAS — ARRASTRAR LÍNEA
+========================= */
+const PAREJAS=[
+  {w:'sol',e:'☀️'},{w:'perro',e:'🐶'},{w:'gato',e:'🐱'},
+  {w:'pez',e:'🐟'},{w:'luna',e:'🌙'},{w:'flor',e:'🌸'},
+];
+
+let matchDone=0;
+let draggingWord=null;
+let tempLine=null;
+let activePointerId=null;
+const connectedPairs=new Map();
+
+window.initMatch=function(){
+  matchDone=0;
+  draggingWord=null;
+  activePointerId=null;
+  connectedPairs.clear();
+
+  const words=document.getElementById('matchWords');
+  const emos=document.getElementById('matchEmos');
+  const svg=document.getElementById('matchLines');
+
+  document.getElementById('matchMsg').textContent='';
+  words.innerHTML='';
+  emos.innerHTML='';
+  svg.innerHTML='';
+
+  shuffle([...PAREJAS]).forEach(p=>{
+    const b=document.createElement('button');
+    b.className='mword';
+    b.textContent=p.w;
+    b.dataset.w=p.w;
+    b.addEventListener('pointerdown',startMatchDrag);
+    words.appendChild(b);
+  });
+
+  shuffle([...PAREJAS]).forEach(p=>{
+    const b=document.createElement('button');
+    b.className='memo';
+    b.textContent=p.e;
+    b.dataset.w=p.w;
+    emos.appendChild(b);
+  });
+
+  requestAnimationFrame(redrawLockedLines);
+};
+
+function pointInMatchZona(clientX,clientY){
+  const zona=document.getElementById('matchZona').getBoundingClientRect();
+  return{x:clientX-zona.left,y:clientY-zona.top};
+}
+function anchorFor(el,side){
+  const zona=document.getElementById('matchZona').getBoundingClientRect();
+  const r=el.getBoundingClientRect();
+  return{
+    x:(side==='right'?r.right:r.left)-zona.left,
+    y:r.top+r.height/2-zona.top
+  };
+}
+function makeLine(x1,y1,x2,y2,temporary=false){
+  const svg=document.getElementById('matchLines');
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1);
+  line.setAttribute('y1',y1);
+  line.setAttribute('x2',x2);
+  line.setAttribute('y2',y2);
+  line.setAttribute('stroke',temporary?'#7868E6':'#4FB477');
+  line.setAttribute('stroke-width','7');
+  line.setAttribute('stroke-linecap','round');
+  if(temporary)line.setAttribute('stroke-dasharray','10 9');
+  svg.appendChild(line);
+  return line;
+}
+
+function startMatchDrag(e){
+  const word=e.currentTarget;
+  if(word.classList.contains('locked'))return;
+
+  e.preventDefault();
+  draggingWord=word;
+  activePointerId=e.pointerId;
+  word.classList.add('dragging');
+  try{word.setPointerCapture(e.pointerId);}catch{}
+
+  const start=anchorFor(word,'right');
+  tempLine=makeLine(start.x,start.y,start.x,start.y,true);
+
+  window.addEventListener('pointermove',moveMatchDrag,{passive:false});
+  window.addEventListener('pointerup',endMatchDrag,{passive:false});
+  window.addEventListener('pointercancel',cancelMatchDrag,{passive:false});
+}
+
+function moveMatchDrag(e){
+  if(!draggingWord||e.pointerId!==activePointerId)return;
+  e.preventDefault();
+  const p=pointInMatchZona(e.clientX,e.clientY);
+  tempLine?.setAttribute('x2',p.x);
+  tempLine?.setAttribute('y2',p.y);
+}
+
+function getEmojiUnderPoint(clientX,clientY){
+  const el=document.elementFromPoint(clientX,clientY);
+  return el?.closest?.('.memo')||null;
+}
+
+function endMatchDrag(e){
+  if(!draggingWord||e.pointerId!==activePointerId)return;
+  e.preventDefault();
+
+  const word=draggingWord;
+  const emoji=getEmojiUnderPoint(e.clientX,e.clientY);
+
+  cleanupDrag();
+
+  if(!emoji||emoji.classList.contains('locked'))return;
+
+  if(word.dataset.w===emoji.dataset.w){
+    word.classList.add('locked');
+    emoji.classList.add('locked');
+
+    connectedPairs.set(word.dataset.w,{word,emoji});
+    matchDone++;
+    speak(word.dataset.w);
+    redrawLockedLines();
+
+    if(matchDone===PAREJAS.length){
+      document.getElementById('matchMsg').textContent='¡Excelente! Uniste todas 🎉';
+    }
+  }else{
+    emoji.classList.add('bad');
+    setTimeout(()=>emoji.classList.remove('bad'),350);
+    document.getElementById('matchMsg').textContent='Casi. Prueba con otro dibujo 🙂';
+    setTimeout(()=>{
+      if(matchDone<PAREJAS.length)document.getElementById('matchMsg').textContent='';
+    },900);
+  }
+}
+
+function cancelMatchDrag(e){
+  if(e.pointerId!==activePointerId)return;
+  cleanupDrag();
+}
+
+function cleanupDrag(){
+  if(draggingWord)draggingWord.classList.remove('dragging');
+  if(tempLine){
+    tempLine.remove();
+    tempLine=null;
+  }
+  draggingWord=null;
+  activePointerId=null;
+  window.removeEventListener('pointermove',moveMatchDrag);
+  window.removeEventListener('pointerup',endMatchDrag);
+  window.removeEventListener('pointercancel',cancelMatchDrag);
+}
+
+function redrawLockedLines(){
+  const svg=document.getElementById('matchLines');
+  if(!svg)return;
+
+  [...svg.querySelectorAll('line:not([stroke-dasharray])')].forEach(l=>l.remove());
+
+  connectedPairs.forEach(({word,emoji})=>{
+    const a=anchorFor(word,'right');
+    const b=anchorFor(emoji,'left');
+    makeLine(a.x,a.y,b.x,b.y,false);
+  });
+}
+
+window.addEventListener('resize',()=>requestAnimationFrame(redrawLockedLines));
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+
+</script>
+</body>
+</html>
