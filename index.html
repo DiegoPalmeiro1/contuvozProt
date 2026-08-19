@@ -478,10 +478,10 @@ function drawGuide(){
     bgCtx.fillStyle='#E2E6FF';
     bgCtx.textAlign='center';
     bgCtx.textBaseline='middle';
-    bgCtx.font="400 300px 'Playwrite CL', cursive";
+    bgCtx.font="900 300px 'Nunito', Arial, sans-serif";
     bgCtx.fillText(letraActual.toLowerCase(),CANVAS_SIZE/2,CANVAS_SIZE/2+10);
   };
-  if(document.fonts?.load) document.fonts.load("300px 'Playwrite CL'").then(paint).catch(paint);
+  if(document.fonts?.load) document.fonts.load("900 300px 'Nunito'").then(paint).catch(paint);
   else paint();
 }
 function resetDraw(){clearDraw();drawGuide();}
@@ -982,7 +982,7 @@ window.decirPalabra=async function(){
   let finished=false;
   let timer=null;
   let countdown=null;
-  let segundos=3;
+  let segundos=2;
 
   btn.textContent=`🎙️ Escuchando... ${segundos}s`;
 
@@ -1106,34 +1106,64 @@ function stopWords(){
 
 /* =========================
    UNE PALABRAS — ARRASTRAR LÍNEA
+   Máximo 5 parejas por ronda
 ========================= */
+
 const PAREJAS=[
-  {w:'sol',e:'☀️'},{w:'perro',e:'🐶'},{w:'gato',e:'🐱'},{w:'papá',e:'👨‍👦‍👦'},{w:'´mamá',e:'👩‍👦'},{w:'´lata',e:'🥫'},
-  {w:'pez',e:'🐟'},{w:'luna',e:'🌙'},{w:'flor',e:'🌸'},{w:'pato',e:'🦆'},{w:'suma',e:'➕'},{w:'auto',e:'🚗'},
+  {w:'sol',e:'☀️'},
+  {w:'perro',e:'🐶'},
+  {w:'gato',e:'🐱'},
+  {w:'papá',e:'👨‍👦‍👦'},
+  {w:'mamá',e:'👩‍👦'},
+  {w:'lata',e:'🥫'},
+  {w:'pez',e:'🐟'},
+  {w:'luna',e:'🌙'},
+  {w:'flor',e:'🌸'},
+  {w:'pato',e:'🦆'},
+  {w:'suma',e:'➕'},
+  {w:'auto',e:'🚗'},
 ];
+
+const PALABRAS_POR_RONDA=5;
+
+let parejasJuego=[];
+let parejasRonda=[];
+let rondaActual=0;
 
 let matchDone=0;
 let draggingWord=null;
 let tempLine=null;
 let activePointerId=null;
+
 const connectedPairs=new Map();
 
 window.initMatch=function(){
+  parejasJuego=shuffle([...PAREJAS]);
+  rondaActual=0;
+  cargarRonda();
+};
+
+function cargarRonda(){
   matchDone=0;
   draggingWord=null;
   activePointerId=null;
   connectedPairs.clear();
 
+  const inicio=rondaActual*PALABRAS_POR_RONDA;
+  const fin=inicio+PALABRAS_POR_RONDA;
+  parejasRonda=parejasJuego.slice(inicio,fin);
+
   const words=document.getElementById('matchWords');
   const emos=document.getElementById('matchEmos');
   const svg=document.getElementById('matchLines');
+  const msg=document.getElementById('matchMsg');
 
-  document.getElementById('matchMsg').textContent='';
   words.innerHTML='';
   emos.innerHTML='';
   svg.innerHTML='';
+  msg.textContent='';
 
-  shuffle([...PAREJAS]).forEach(p=>{
+  shuffle([...parejasRonda]).forEach(p=>{
     const b=document.createElement('button');
     b.className='mword';
     b.textContent=p.w;
@@ -1142,7 +1172,7 @@ window.initMatch=function(){
     words.appendChild(b);
   });
 
-  shuffle([...PAREJAS]).forEach(p=>{
+  shuffle([...parejasRonda]).forEach(p=>{
     const b=document.createElement('button');
     b.className='memo';
     b.textContent=p.e;
@@ -1151,137 +1181,311 @@ window.initMatch=function(){
   });
 
   requestAnimationFrame(redrawLockedLines);
-};
+}
+
+function siguienteRonda(){
+  const totalRondas=Math.ceil(parejasJuego.length/PALABRAS_POR_RONDA);
+
+  if(rondaActual<totalRondas-1){
+    document.getElementById('matchMsg').textContent='¡Muy bien! 🎉 Vamos con otras palabras';
+
+    setTimeout(()=>{
+      rondaActual++;
+      cargarRonda();
+    },1400);
+
+  }else{
+    document.getElementById('matchMsg').textContent='¡Excelente! Completaste todas las palabras 🎉🌟';
+  }
+}
 
 function pointInMatchZona(clientX,clientY){
   const zona=document.getElementById('matchZona').getBoundingClientRect();
-  return{x:clientX-zona.left,y:clientY-zona.top};
+  return{
+    x:clientX-zona.left,
+    y:clientY-zona.top
+  };
 }
+
 function anchorFor(el,side){
   const zona=document.getElementById('matchZona').getBoundingClientRect();
   const r=el.getBoundingClientRect();
+
   return{
     x:(side==='right'?r.right:r.left)-zona.left,
     y:r.top+r.height/2-zona.top
   };
 }
+
 function makeLine(x1,y1,x2,y2,temporary=false){
   const svg=document.getElementById('matchLines');
-  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+
+  const line=document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'line'
+  );
+
   line.setAttribute('x1',x1);
   line.setAttribute('y1',y1);
   line.setAttribute('x2',x2);
   line.setAttribute('y2',y2);
-  line.setAttribute('stroke',temporary?'#7868E6':'#4FB477');
+  line.setAttribute(
+    'stroke',
+    temporary?'#7868E6':'#4FB477'
+  );
   line.setAttribute('stroke-width','7');
   line.setAttribute('stroke-linecap','round');
-  if(temporary)line.setAttribute('stroke-dasharray','10 9');
+
+  if(temporary){
+    line.setAttribute('stroke-dasharray','10 9');
+  }
+
   svg.appendChild(line);
+
   return line;
 }
 
 function startMatchDrag(e){
   const word=e.currentTarget;
-  if(word.classList.contains('locked'))return;
+
+  if(word.classList.contains('locked')){
+    return;
+  }
 
   e.preventDefault();
+
   draggingWord=word;
   activePointerId=e.pointerId;
+
   word.classList.add('dragging');
-  try{word.setPointerCapture(e.pointerId);}catch{}
+
+  try{
+    word.setPointerCapture(e.pointerId);
+  }catch{}
 
   const start=anchorFor(word,'right');
-  tempLine=makeLine(start.x,start.y,start.x,start.y,true);
 
-  window.addEventListener('pointermove',moveMatchDrag,{passive:false});
-  window.addEventListener('pointerup',endMatchDrag,{passive:false});
-  window.addEventListener('pointercancel',cancelMatchDrag,{passive:false});
+  tempLine=makeLine(
+    start.x,
+    start.y,
+    start.x,
+    start.y,
+    true
+  );
+
+  window.addEventListener(
+    'pointermove',
+    moveMatchDrag,
+    {passive:false}
+  );
+
+  window.addEventListener(
+    'pointerup',
+    endMatchDrag,
+    {passive:false}
+  );
+
+  window.addEventListener(
+    'pointercancel',
+    cancelMatchDrag,
+    {passive:false}
+  );
 }
 
 function moveMatchDrag(e){
-  if(!draggingWord||e.pointerId!==activePointerId)return;
+  if(
+    !draggingWord ||
+    e.pointerId!==activePointerId
+  ){
+    return;
+  }
+
   e.preventDefault();
-  const p=pointInMatchZona(e.clientX,e.clientY);
+
+  const p=pointInMatchZona(
+    e.clientX,
+    e.clientY
+  );
+
   tempLine?.setAttribute('x2',p.x);
   tempLine?.setAttribute('y2',p.y);
 }
 
 function getEmojiUnderPoint(clientX,clientY){
-  const el=document.elementFromPoint(clientX,clientY);
+  const el=document.elementFromPoint(
+    clientX,
+    clientY
+  );
+
   return el?.closest?.('.memo')||null;
 }
 
 function endMatchDrag(e){
-  if(!draggingWord||e.pointerId!==activePointerId)return;
+  if(
+    !draggingWord ||
+    e.pointerId!==activePointerId
+  ){
+    return;
+  }
+
   e.preventDefault();
 
   const word=draggingWord;
-  const emoji=getEmojiUnderPoint(e.clientX,e.clientY);
+
+  const emoji=getEmojiUnderPoint(
+    e.clientX,
+    e.clientY
+  );
 
   cleanupDrag();
 
-  if(!emoji||emoji.classList.contains('locked'))return;
+  if(
+    !emoji ||
+    emoji.classList.contains('locked')
+  ){
+    return;
+  }
 
   if(word.dataset.w===emoji.dataset.w){
+
     word.classList.add('locked');
     emoji.classList.add('locked');
 
-    connectedPairs.set(word.dataset.w,{word,emoji});
+    connectedPairs.set(
+      word.dataset.w,
+      {word,emoji}
+    );
+
     matchDone++;
+
     speak(word.dataset.w);
+
     redrawLockedLines();
 
-    if(matchDone===PAREJAS.length){
-      document.getElementById('matchMsg').textContent='¡Excelente! Uniste todas 🎉';
+    if(matchDone===parejasRonda.length){
+      siguienteRonda();
     }
+
   }else{
+
     emoji.classList.add('bad');
-    setTimeout(()=>emoji.classList.remove('bad'),350);
-    document.getElementById('matchMsg').textContent='Casi. Prueba con otro dibujo 🙂';
+
     setTimeout(()=>{
-      if(matchDone<PAREJAS.length)document.getElementById('matchMsg').textContent='';
+      emoji.classList.remove('bad');
+    },350);
+
+    document.getElementById(
+      'matchMsg'
+    ).textContent=
+      'Casi. Prueba con otro dibujo 🙂';
+
+    setTimeout(()=>{
+      if(matchDone<parejasRonda.length){
+        document.getElementById(
+          'matchMsg'
+        ).textContent='';
+      }
     },900);
   }
 }
 
 function cancelMatchDrag(e){
-  if(e.pointerId!==activePointerId)return;
+  if(e.pointerId!==activePointerId){
+    return;
+  }
+
   cleanupDrag();
 }
 
 function cleanupDrag(){
-  if(draggingWord)draggingWord.classList.remove('dragging');
+  if(draggingWord){
+    draggingWord.classList.remove(
+      'dragging'
+    );
+  }
+
   if(tempLine){
     tempLine.remove();
     tempLine=null;
   }
+
   draggingWord=null;
   activePointerId=null;
-  window.removeEventListener('pointermove',moveMatchDrag);
-  window.removeEventListener('pointerup',endMatchDrag);
-  window.removeEventListener('pointercancel',cancelMatchDrag);
+
+  window.removeEventListener(
+    'pointermove',
+    moveMatchDrag
+  );
+
+  window.removeEventListener(
+    'pointerup',
+    endMatchDrag
+  );
+
+  window.removeEventListener(
+    'pointercancel',
+    cancelMatchDrag
+  );
 }
 
 function redrawLockedLines(){
-  const svg=document.getElementById('matchLines');
-  if(!svg)return;
+  const svg=document.getElementById(
+    'matchLines'
+  );
 
-  [...svg.querySelectorAll('line:not([stroke-dasharray])')].forEach(l=>l.remove());
+  if(!svg){
+    return;
+  }
 
-  connectedPairs.forEach(({word,emoji})=>{
-    const a=anchorFor(word,'right');
-    const b=anchorFor(emoji,'left');
-    makeLine(a.x,a.y,b.x,b.y,false);
-  });
+  [
+    ...svg.querySelectorAll(
+      'line:not([stroke-dasharray])'
+    )
+  ].forEach(line=>line.remove());
+
+  connectedPairs.forEach(
+    ({word,emoji})=>{
+
+      const a=anchorFor(
+        word,
+        'right'
+      );
+
+      const b=anchorFor(
+        emoji,
+        'left'
+      );
+
+      makeLine(
+        a.x,
+        a.y,
+        b.x,
+        b.y,
+        false
+      );
+    }
+  );
 }
 
-window.addEventListener('resize',()=>requestAnimationFrame(redrawLockedLines));
+window.addEventListener(
+  'resize',
+  ()=>requestAnimationFrame(
+    redrawLockedLines
+  )
+);
 
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
+    const j=Math.floor(
+      Math.random()*(i+1)
+    );
+
+    [a[i],a[j]]=[
+      a[j],
+      a[i]
+    ];
   }
+
   return a;
 }
 
