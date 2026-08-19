@@ -478,10 +478,10 @@ function drawGuide(){
     bgCtx.fillStyle='#E2E6FF';
     bgCtx.textAlign='center';
     bgCtx.textBaseline='middle';
-    bgCtx.font="400 300px 'Playwrite CL', cursive";
-    bgCtx.fillText(letraActual.toLowerCase(),CANVAS_SIZE/2,CANVAS_SIZE/2+10);
+    bgCtx.font = "900 300px 'Nunito', Arial, sans-serif";
+    bgCtx.fillText(letraActual.toLowerCase(), CANVAS_SIZE / 2, CANVAS_SIZE / 2 + 10);
   };
-  if(document.fonts?.load) document.fonts.load("300px 'Playwrite CL'").then(paint).catch(paint);
+  if(document.fonts?.load) document.fonts.load("300px 'Nunito'").then(paint).catch(paint);
   else paint();
 }
 function resetDraw(){clearDraw();drawGuide();}
